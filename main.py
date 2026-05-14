@@ -3,7 +3,7 @@ from models import Author, Post, Category, Tag
 from sqlalchemy.orm import joinedload, selectinload
 
 # создать таблицы
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 
 def get_posts_safe():
@@ -32,3 +32,4 @@ def get_posts_safe():
 
 if __name__ == "__main__":
     get_posts_safe()
+    
