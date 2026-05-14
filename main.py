@@ -1,26 +1,34 @@
-from database import Base, engine, SessionLocal
-from models import Product, Seller
-Base.metadata.drop_all(bind=engine)
+from database import engine, SessionLocal, Base
+from models import Author, Post, Category, Tag
+from sqlalchemy.orm import joinedload, selectinload
+
+# создать таблицы
 Base.metadata.create_all(bind=engine)
 
 
-session = SessionLocal()
+def get_posts_safe():
+    db = SessionLocal()
 
-try:
-    seller = Seller(name="Muhammadyor")
-    session.add(seller)
-    session.commit()
+    # ✅ FIX N+1 problem
+    posts = (
+        db.query(Post)
+        .options(
+            selectinload(Post.author),
+            selectinload(Post.category),
+            selectinload(Post.tags)
+        )
+        .all()
+    )
 
-    product = Product(id=1, name="Telefon",
-                      description="fefef",
-                      price=22.3,
-                      seller_id=1)
-    session.add(product)
-    session.commit()
-    
-except Exception as error:
-    session.rollback()
-    print(f"NIMADIR XATO KETDI: {error}")
+    for post in posts:
+        print("TITLE:", post.title)
+        print("AUTHOR:", post.author.name)
+        print("CATEGORY:", post.category.name)
+        print("TAGS:", [t.name for t in post.tags])
+        print("-" * 40)
 
-finally:
-    session.close()
+    db.close()
+
+
+if __name__ == "__main__":
+    get_posts_safe()

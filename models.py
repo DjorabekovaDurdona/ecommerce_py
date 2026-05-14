@@ -1,43 +1,61 @@
-from sqlalchemy import Integer, String, Float, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Table
+from sqlalchemy.orm import relationship
 from database import Base
 
-
-class Seller(Base):
-    __tablename__ = 'sellers'
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(length=50), index=True)
-    products: Mapped[list["Product"]] = relationship("Product", back_populates="seller")
-
-
-class Product(Base):
-    __tablename__ = 'products'
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(length=50), index=True)
-    description: Mapped[str] = mapped_column(String(length=50), index=True)
-    price: Mapped[float] = mapped_column(Float, primary_key=True)
-
-    seller_id: Mapped[int] = mapped_column(Integer, ForeignKey("sellers.id"))
-    seller: Mapped["Seller"] = relationship("Seller", back_populates="products")
+# Many-to-many Post <-> Tag
+post_tag = Table(
+    "post_tag",
+    Base.metadata,
+    Column("post_id", ForeignKey("posts.id"), primary_key=True),
+    Column("tag_id", ForeignKey("tags.id"), primary_key=True)
+)
 
 
-class Customer(Base):
-    __tablename__ = 'customers'
+class Author(Base):
+    __tablename__ = "authors"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(length=50), index=True)
-  
-    orders: Mapped["Order"] = relationship("Order", back_populates="customer")
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+
+    posts = relationship("Post", back_populates="author")
 
 
-class Order(Base):
-    __tablename__ = 'orders'
+class Category(Base):
+    __tablename__ = "categories"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(length=50), index=True)
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
 
-    customer_id: Mapped[int] = mapped_column(Integer, ForeignKey("customers.id"))
+    posts = relationship("Post", back_populates="category")
 
-    customer: Mapped[list["Customer"]] = relationship("Customer", back_populates="orders")
+
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(50), unique=True, nullable=False)
+
+    posts = relationship(
+        "Post",
+        secondary=post_tag,
+        back_populates="tags"
+    )
+
+
+class Post(Base):
+    __tablename__ = "posts"
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+
+    author_id = Column(Integer, ForeignKey("authors.id"))
+    category_id = Column(Integer, ForeignKey("categories.id"))
+
+    author = relationship("Author", back_populates="posts")
+    category = relationship("Category", back_populates="posts")
+    tags = relationship(
+        "Tag",
+        secondary=post_tag,
+        back_populates="posts"
+    )
